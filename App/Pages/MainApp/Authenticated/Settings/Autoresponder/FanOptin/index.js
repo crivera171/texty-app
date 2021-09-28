@@ -1,0 +1,140 @@
+import React, {useState, useCallback, useContext} from 'react';
+import {Keyboard, View, StyleSheet, Text} from 'react-native';
+import {Formik} from 'formik';
+import {Inputs, Typography} from '@/Styles';
+import {COLORS} from '@/Styles/colors';
+import * as Yup from 'yup';
+import {Header} from '@/Components/Layout/Header';
+import {ProfileStore} from 'State/ProfileContext';
+import {Input} from '@/Components/Inputs/Input';
+import tw from 'tw';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import {Icon} from 'react-native-elements';
+import {widthPercentageToDP as wp} from 'react-native-responsive-screen';
+
+const AutoresponderSchema = Yup.object().shape({
+  first_message: Yup.string()
+    .required('Enter fan optin message')
+    .test(
+      'first_message',
+      'You can only use one {link} token in this message',
+      (str) =>
+        (str && str.match(/\{link\}/g) === null) ||
+        (str && str.match(/\{link\}/g).length <= 1),
+    ),
+});
+
+const FanOptinPage = ({route, navigation}) => {
+  const {profile} = route.params;
+  const {actions} = useContext(ProfileStore);
+
+  const initialValues = profile;
+
+  const [validatingRealTime, setValidatingRealTime] = useState(false);
+  const [firstMessage, setFirstMessage] = useState(
+    initialValues.first_message ||
+      "Hey there! I won't be able to reply until you register for free here: {link} :)",
+  );
+  const [loading, setLoading] = useState(false);
+
+  const onFormSubmit = useCallback(
+    ({first_message}) =>
+      actions
+        .editProfile({
+          first_message,
+        })
+        .then(() => {
+          actions.fetchProfile();
+          navigation.goBack();
+        }),
+    [actions.editProfile, actions.fetchProfile],
+  );
+
+  return (
+    <View style={styles.pageContainer}>
+      <Formik
+        initialValues={{
+          first_message: firstMessage,
+        }}
+        onSubmit={(data) => {
+          Keyboard.dismiss();
+          setLoading(true);
+          onFormSubmit(data);
+          setValidatingRealTime(true);
+        }}
+        validationSchema={AutoresponderSchema}
+        validateOnBlur={false}
+        validateOnChange={validatingRealTime}>
+        {(props) => (
+          <View style={styles.background}>
+            <Header
+              title="Optin Message"
+              doneTitle="Save"
+              handleBack={() => navigation.goBack()}
+              handleDone={() => {
+                props.handleSubmit();
+              }}
+              loading={loading}
+            />
+            <KeyboardAwareScrollView>
+              <View style={styles.container}>
+                <View style={styles.switchContainer}>
+                  <View style={tw('flex-row items-center')}>
+                    <Icon
+                      color={COLORS.darkGray}
+                      type="font-awesome-5"
+                      name="file-signature"
+                      size={wp(5)}
+                      style={tw('mr-2')}
+                      solid
+                    />
+                    <Text style={Typography.subtitle}>Setup optin message</Text>
+                  </View>
+                </View>
+
+                <Text style={styles.inputNote}>
+                  This message is sent automatically when new fans message you.
+                  You can use <Text style={styles.token}>{'{link}'}</Text> to
+                  insert a link to your signup page.
+                </Text>
+                <View style={styles.inputContainer}>
+                  <Input
+                    multiline
+                    numberOfLines={6}
+                    placeholder="First message"
+                    onChangeText={(msgVal) => {
+                      setFirstMessage(msgVal);
+                      props.setFieldValue('first_message', msgVal);
+                    }}
+                    value={firstMessage}
+                    error={props.errors.first_message}
+                    maxCharacters={1600}
+                  />
+                </View>
+              </View>
+            </KeyboardAwareScrollView>
+          </View>
+        )}
+      </Formik>
+    </View>
+  );
+};
+
+export default FanOptinPage;
+
+const styles = StyleSheet.create({
+  background: tw('h-full bg-white'),
+  container: tw('py-4 px-5 w-full'),
+  switchContainer: {
+    ...Inputs.switchContainer,
+    ...tw('py-2'),
+  },
+  inputNote: {
+    ...tw('text-black my-3'),
+    ...Typography.notice,
+  },
+  token: {
+    color: COLORS.blue,
+    padding: 8,
+  },
+});

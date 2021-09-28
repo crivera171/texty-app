@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "project_number": "465509191918",
+    "firebase_url": "https://smsapp-ddf7a.firebaseio.com",
+    "project_id": "smsapp-ddf7a",
+    "storage_bucket": "smsapp-ddf7a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:465509191918:android:7d378182537fc416fbe3ff",
+        "android_client_info": {
+          "package_name": "com.koptional.tiktext"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "465509191918-ikse4agm9lvc6d2usdujhlobpb0biaio.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCmu0qn3MG3GweA248XLGAjVPHP0n1u5c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "465509191918-ikse4agm9lvc6d2usdujhlobpb0biaio.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "465509191918-a3b8vanin4e0rhledhd9l2ne5p29dtni.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.koptional.texty"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:465509191918:android:0ccd80afe0df3913fbe3ff",
+        "android_client_info": {
+          "package_name": "com.texty.texty"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "465509191918-ikse4agm9lvc6d2usdujhlobpb0biaio.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCmu0qn3MG3GweA248XLGAjVPHP0n1u5c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "465509191918-ikse4agm9lvc6d2usdujhlobpb0biaio.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "465509191918-a3b8vanin4e0rhledhd9l2ne5p29dtni.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.koptional.texty"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,119 @@
+name: react-native-android-build-apk
+on:
+  push:
+jobs:
+  install-and-test:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install npm dependencies
+        run: |
+          npm install
+  build-android:
+    if: github.ref == 'refs/heads/dev'
+    needs: install-and-test
+    name: Deploying to Firebase (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install npm dependencies
+        run: |
+          yarn install
+      - name: Write env file
+        run: |
+          printf "${ENV_FILE}" > .env
+        env:
+          ENV_FILE : ${{secrets.ENV}}
+      - name: Build Android Bundle
+        run: |
+          cd android && ./gradlew assembleRelease
+      - name: Sign Android release
+        id: sign_app
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
+          alias: ${{ secrets.ANDROID_SIGNING_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+      - name: upload artifact to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{secrets.FIREBASE_APP_ID}}
+          token: ${{secrets.FIREBASE_TOKEN}}
+          groups: dev-group
+          file: ${{steps.sign_app.outputs.signedReleaseFile}}
+  build-ios:
+    if: github.ref == 'refs/heads/dev'
+    #needs: build-android #will java run OOM if parallel...? different hardware right?
+    name: Deploying to Testflight (iOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+      - name: Set environment variables from project settings
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          npm install
+          npm i -g react-native-cli
+          cd ios && exec ../.github/scripts/set-env-from-xcodeproj.sh
+      - name: Write env file
+        run: |
+          printf "${ENV_FILE}" > .env
+        env:
+          ENV_FILE : ${{secrets.ENV}}
+      - name: Build bundle
+        run: |
+          react-native bundle --entry-file index.js --platform ios --dev false --bundle-output ios/main.jsbundle --assets-dest ios
+      - name: Import signing certificate
+        env:
+          SIGNING_CERTIFICATE_P12_DATA: ${{ secrets.SIGNING_CERTIFICATE_P12_DATA }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          cd ios && exec ../.github/scripts/import-certificate.sh
+      - name: Import provisioning profile
+        env:
+          PROVISIONING_PROFILE_DATA: ${{ secrets.PROVISIONING_PROFILE_DATA }}
+        run: |
+          cd ios && exec ../.github/scripts/import-profile.sh
+      - name: pod install
+        run: |
+          npx pod-install
+      # - name: update version
+      #   uses: yanamura/ios-bump-version@v1
+      #   with:
+      #     path: ios/
+      #     project-path: TikText.xcodeproj
+      # - name: commit version bump
+      #   run: |
+      #     git add .
+      #     git commit -m "bump version"
+      #     git push origin dev
+      - name: Build app
+        run: |
+          cd ios && fastlane run build_app scheme:"TikText Prod"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build.log
+          path: ~/Library/Logs/gym/*.log
+
+      # - name: Upload release assets
+      #   #if: startsWith(github.ref, 'refs/tags/v')
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: |
+      #       ${{ env.PRODUCT_NAME }}.ipa
+      #       ${{ env.PRODUCT_NAME }}.app.dSYM.zip
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload app to App Store Connect
+        #if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          APP_STORE_CONNECT_USERNAME: ${{ secrets.APPLEID_USERNAME }}
+          APP_STORE_CONNECT_PASSWORD: ${{ secrets.APPLEID_PASSWORD }}
+        run: |
+          cd ios && xcrun altool --upload-app -t ios -f "$PRODUCT_NAME.ipa" -u "$APP_STORE_CONNECT_USERNAME" -p "$APP_STORE_CONNECT_PASSWORD"
